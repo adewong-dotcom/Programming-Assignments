@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>My Bezier Plane</title>
+        <style>
+            body { 
+                margin: 0;  
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+
+        </div>
+    </body>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script> 
+        <script src="https://threejs.org/build/three.js"></script>
+        <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+        <script type="text/javascript">
+            var $container = $('#container');
+
+            const scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.set(-4, 2, 5);
+            const renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            
+            //Enabled shadowmapping on renderer to make sure it rendered the shadows also
+            renderer.shadowMap.enabled = true;
+            //renderer.shadowMap.type = THREE.PCFSoftShadowMap();
+
+            //OrbitControls allows you to zoom in and out and rotate the molecule
+            const controls = new THREE.OrbitControls( camera, renderer.domElement );
+            controls.enableDamping = true;
+            
+
+            camera.position.z = 200;
+            //controls.update();
+            scene.add(camera);
+            
+            $container.append(renderer.domElement);
+
+            //Keeps everything illuminated so it can be seen well
+            const light2 = new THREE.AmbientLight(0x404040);
+            scene.add(light2);
+
+            //Creates the plane that goes under the parabolic
+            const geometry = new THREE.PlaneGeometry( 1000, 2000, 1 );
+            const material = new THREE.MeshPhongMaterial( { color: 0x00ff00, shininess: 50 } );
+            const plane = new THREE.Mesh( geometry, material);
+
+            plane.position.y = - 70;//puts it under the elliptic parabolic
+            plane.rotation.x = - Math.PI / 2; //makes it flat
+            plane.receiveShadow = true; //lets a shadow be cast on it
+            camera.add( plane ); //adds it to the camera to keep it static
+            
+            // Code adapted from https://stackoverflow.com/questions/53936572/how-do-you-plot-elliptic-paraboloid-in-threejs
+
+            var planeGeom = new THREE.PlaneBufferGeometry(4, 4, 20, 20);// creates the plane
+            planeGeom.rotateX(-Math.PI * 0.5); //rotates the plane
+            var v = new THREE.Vector3(); //creates vector to give the plane parabollic shape
+            var positions = planeGeom.attributes.position; //stores the current positions of points
+            //loop to create parabolic based on formula
+            for (var i = 0; i < positions.count; i++) {
+                v.fromBufferAttribute(positions, i);
+                positions.setY(i, ((v.x * v.x) + (2 * v.z * v.z)) * 0.25);
+            }
+            planeGeom.center();//centers the shape
+            planeGeom.computeVertexNormals();
+
+            var elliptic = new THREE.Mesh(planeGeom, new THREE.MeshNormalMaterial({
+                side: THREE.DoubleSide
+            }));
+            elliptic.castShadow = true; //casts a shadow
+            scene.add(elliptic);//adds the parabolic to the scene
+
+
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
+
+            //Creates the axis helper and adds it to the scene
+            const axisHelper = new THREE.AxesHelper(0.5);
+            scene.add( axisHelper );
+
+            //Creates a light that is above the image and can cast shadows
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.castShadow = true;
+            light.position.set(0, 1, 0)
+            scene.add(light);
+            
+
+            camera.position.z = 5; // places camera in this location
+
+            function animate() {
+                requestAnimationFrame( animate );
+
+                controls.update();
+                renderer.render( scene, camera );
+            }
+            animate();
+        </script>
+</html>
+

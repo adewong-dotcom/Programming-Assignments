@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>My Bezier Plane</title>
+        <style>
+            body { 
+                margin: 0;  
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+
+        </div>
+    </body>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script> 
+        <script src="https://threejs.org/build/three.js"></script>
+        <script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+        <script type="text/javascript">
+            var $container = $('#container');
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            const renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            
+            //Enabled shadowmapping on renderer to make sure it rendered the shadows also
+            renderer.shadowMap.enabled = true;
+            //renderer.shadowMap.type = THREE.PCFSoftShadowMap();
+
+            //OrbitControls allows you to zoom in and out and rotate the molecule
+            const controls = new THREE.OrbitControls( camera, renderer.domElement );
+            controls.enableDamping = true;
+            
+
+            camera.position.z = 200;
+            //controls.update();
+            scene.add(camera);
+            
+            $container.append(renderer.domElement);
+
+            //Keeps everything illuminated so it can be seen well
+            const light2 = new THREE.AmbientLight(0x404040);
+            scene.add(light2);
+            
+            var controlPoints = [   [0, 0, 0],
+                                    [2, 2, 0],
+                                    [-2, 1, 0],
+                                    [0, 3, 0]
+
+            ];
+
+            const bezierPlane = (points, steps) =>{
+                var N = Math.round(steps)+1 || 20; //the number of vertices
+
+                const geometry = new THREE.Geometry();
+                const curve = new THREE.CubicBezierCurve3();
+                for(var i =0; i<points; i++){
+                    if(i==0){
+                        curve.v0 = new THREE.Vector(points[i][0], points[i][1], points[i][2]);
+                    }
+                    else if(i==1){
+                        curve.v1 = new THREE.Vector(points[i][0], points[i][1], points[i][2]);
+                    }
+                    else if(i==2){
+                        curve.v2 = new THREE.Vector(points[i][0], points[i][1], points[i][2]);
+                    }
+                    else{
+                        curve.v3 = new THREE.Vector(points[i][0], points[i][1], points[i][2]);
+                    }
+                }
+                 for(var j=0; j<N; j++){
+                     geometry.vertices.push( curve.getPoint(j * (1/(N-1))));
+                 }
+                 return geometry;
+                /*const points = curve.getPoints( N );
+                const geometry = new THREE.BufferGeometry().setFromPoints( points );
+                const material = new THREE.MeshBasicMaterial(
+                    {
+                        color: 0xff0000
+                    }
+                );
+                const curveObject = new THREE.PlaneGeometry( geometry, material);
+                return curveObject;*/
+                
+            }
+            /*function bezierPlane(plane, bend){
+                var curve = new THREE.CubicBezierCurve3(
+                    plane.vertices[0],
+                    new THREE.Vector3(plane.parameters.width/2, 0, bend),
+                    new THREE.Vector3(plane.parameters.width/2, 0, bend),
+                    plane.vertices[(plane.vertices.length/2)-1]
+                );
+                var points = curve.getPoints(Math.abs(plane.vertices.length/2)-1);
+
+                for(var edge = 1; edge < 3; edge++){
+                    for(var point = 0; point < points.length; point++){
+                        plane.vertices[(edge ===2) ? points.length + point : point].z = points[point].z;
+                    }
+                }
+
+                plane.computeFaceNormals();
+                plane.computeVertexNormals();
+
+                return plane;
+            }
+            const geo= new THREE.PlaneGeometry(1, 1);
+            const material = new THREE.MeshBasicMaterial( {
+                color: red,
+                side: THREE.DoubleSide
+            } );
+            const plane = new THREE.Mesh( geo, material );
+
+            scene.add(plane);*/
+
+             //Creates a plane geometry
+            const pgeometry = new THREE.PlaneGeometry(4.5, 4.5, 32, 32);
+            const pmaterial = new THREE.MeshPhongMaterial({
+                color: 0x3ec13e,//makes the plane green
+                side: THREE.DoubleSide
+            });
+            const plane = new THREE.Mesh( pgeometry, pmaterial);
+            plane.receiveShadow = true; //receives shadows
+            plane.castShadow = true; //produces shadows
+            plane.rotateX( -Math.PI / 2); //makes it flat
+            scene.add( plane ); //adds it to the scene
+
+            const axisHelper = new THREE.AxesHelper(0.5);
+            scene.add( axisHelper );
+
+            //Creates a light that is above the image and can cast shadows
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.castShadow = true;
+            light.position.set(0, 1, 0)
+            scene.add(light);
+            
+
+            camera.position.z = 5; // places camera in this location
+
+            function animate() {
+                requestAnimationFrame( animate );
+
+                controls.update();
+                renderer.render( scene, camera );
+            }
+            animate();
+        </script>
+</html>
+
